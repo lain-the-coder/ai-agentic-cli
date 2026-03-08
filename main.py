@@ -2,6 +2,7 @@ import os
 import argparse
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 load_dotenv()
 
@@ -13,9 +14,25 @@ def main():
     parser = argparse.ArgumentParser(description="AI Agentic CLI tool")
     parser.add_argument("prompt", type=str, help="Provide your prompt here")
     args = parser.parse_args()
+    # Constructing the message - a list that holds the entire history of the chat
+    # types.Content is a single entry in the chat, if multiple, then multiple types.Content in the messages list separated by comma
+    # role is the identity and first arg for types.Content
+    # parts is the payload list that holds the actual data
+    # types.Part is an individual item, multiple data which will have multiple lines of types.Part separated by comma in parts list
+    # the data - the final argument where your actual content lives
+    messages = [
+       types.Content(
+          role="user",
+          parts=[
+              types.Part(
+                   text=args.prompt
+              )
+          ]
+       )
+    ]
     response = client.models.generate_content(
        model="gemini-2.5-flash",
-       contents=args.prompt
+       contents=messages
     )
     if response.usage_metadata is None:
        raise RuntimeError("Failed API Request, please try again later")
