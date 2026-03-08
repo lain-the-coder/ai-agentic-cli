@@ -13,6 +13,7 @@ def main():
     client = genai.Client(api_key=api_key)
     parser = argparse.ArgumentParser(description="AI Agentic CLI tool")
     parser.add_argument("prompt", type=str, help="Provide your prompt here")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
     # Constructing the message - a list that holds the entire history of the chat
     # types.Content is a single entry in the chat, if multiple, then multiple types.Content in the messages list separated by comma
@@ -37,9 +38,12 @@ def main():
     if response.usage_metadata is None:
        raise RuntimeError("Failed API Request, please try again later")
     else:
-       print("User prompt: Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum.")
-       print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
-       print(f"Response:\n{response.text}")
+       if args.verbose:
+          print("User prompt: Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum.")
+          print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
+          print(f"Response:\n{response.text}")
+       else:
+          print(f"Response:\n{response.text}")
 
 if __name__ == "__main__":
     main()
