@@ -3,13 +3,15 @@ import argparse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from prompts import system_prompt
+from call_function import available_functions
 
 load_dotenv()
 
 def main():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-       raise RuntimeError("API Key is blank, please add it to the .env file")
+        raise RuntimeError("API Key is blank, please add it to the .env file")
     client = genai.Client(api_key=api_key)
     parser = argparse.ArgumentParser(description="AI Agentic CLI tool")
     parser.add_argument("prompt", type=str, help="Provide your prompt here")
@@ -33,17 +35,25 @@ def main():
     ]
     response = client.models.generate_content(
        model="gemini-2.5-flash",
-       contents=messages
+       contents=messages,
+       config=types.GenerateContentConfig(
+       tools=[available_functions],
+        system_instruction=system_prompt
+       ),
     )
     if response.usage_metadata is None:
-       raise RuntimeError("Failed API Request, please try again later")
+        raise RuntimeError("Failed API Request, please try again later")
     else:
-       if args.verbose:
-          print("User prompt: Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum.")
-          print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
-          print(f"Response:\n{response.text}")
-       else:
-          print(f"Response:\n{response.text}")
-
+        # Check for function calls
+        function_calls = response.function_calls
+        if args.verbose:
+            print(f"User prompt: {args.prompt}")
+            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
+        print("Response:")
+        if function_calls:
+            for function_call in function_calls:
+                print(f"Calling function: {function_call.name}({function_call.args})")  
+        else:
+            print(response.text)
 if __name__ == "__main__":
     main()
