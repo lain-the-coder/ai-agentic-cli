@@ -12,3 +12,34 @@ available_functions = types.Tool(
         schema_write_file,
     ],
 )
+
+def call_function(function_call, verbose=False):
+
+    # Check for verbose command from user for user to see
+    if verbose:
+        print(f"Calling function: {function_call.name}({function_call.args})")
+    else:
+        print(f" - Calling function: {function_call.name}")
+        
+    # Create a dictionary since function calls cannot be made with strings
+    function_map = {
+        "get_files_info": get_files_info,
+        "get_file_content": get_file_content,
+        "write_file": write_file,
+        "run_python_file": run_python_file
+    }
+
+    # Copy the .name property of function_call argument into a variable since it could be None
+    function_name = function_call.name or ""
+
+    # If provided function name is not found in the mapping defined earlier then return a types.Content object
+    if function_name not in function_map:
+        return types.Content(
+            role="tool",
+            parts=[
+                types.Part.from_function_response(
+                    name=function_name,
+                    response={"error": f"Unknown function: {function_name}"},
+                )
+            ]
+        )
