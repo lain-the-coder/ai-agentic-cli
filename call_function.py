@@ -43,3 +43,11 @@ def call_function(function_call, verbose=False):
                 )
             ]
         )
+
+    # copy the args into a new dict variable since we need to add our own argument like working dir to it
+    args = dict(function_call.args) if function_call.args else {}
+
+    # now add the working_directory arg to the dict; ./calculator means look for a folder named calc that is located here in the same place as my script
+    args["working_directory"] = "./calculator"
+
+    
