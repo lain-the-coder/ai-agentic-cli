@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from prompts import system_prompt
-from call_function import available_functions
+from call_function import available_functions, call_function
 
 load_dotenv()
 
@@ -17,6 +17,7 @@ def main():
     parser.add_argument("prompt", type=str, help="Provide your prompt here")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
+    function_results = []
     # Constructing the message - a list that holds the entire history of the chat
     # types.Content is a single entry in the chat, if multiple, then multiple types.Content in the messages list separated by comma
     # role is the identity and first arg for types.Content
@@ -52,7 +53,16 @@ def main():
         print("Response:")
         if function_calls:
             for function_call in function_calls:
-                print(f"Calling function: {function_call.name}({function_call.args})")  
+                function_call_result = call_function(function_call, args)
+                if not function_call_result.parts:
+                    raise RuntimeError("Empty .parts list")
+                if not function_call_result.parts[0].function_response:
+                    raise RuntimeError("Returned None value")
+                if not function_call_result.parts[0].function_response.response:
+                    raise RuntimeError("Returned None value")
+                function_results.append(function_call_result.parts[0])
+                if args.verbose:
+                    print(f"-> {function_call_result.parts[0].function_response.response}")
         else:
             print(response.text)
 if __name__ == "__main__":

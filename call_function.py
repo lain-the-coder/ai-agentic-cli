@@ -3,6 +3,10 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
+from functions.get_files_info import get_files_info
+from functions.get_file_content import get_file_content
+from functions.write_file import write_file
+from functions.run_python_file import run_python_file
 
 available_functions = types.Tool(
     function_declarations=[
@@ -46,6 +50,11 @@ def call_function(function_call, verbose=False):
 
     # copy the args into a new dict variable since we need to add our own argument like working dir to it
     args = dict(function_call.args) if function_call.args else {}
+
+    # If the AI tries to name the folder we are already in, 
+    # we can override it to "." so it doesn't double up the path
+    if args.get("directory") == "calculator":
+        args["directory"] = "."
 
     # now add the working_directory arg to the dict; ./calculator means look for a folder named calc that is located here in the same place as my script
     args["working_directory"] = "./calculator"
