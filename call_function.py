@@ -50,4 +50,18 @@ def call_function(function_call, verbose=False):
     # now add the working_directory arg to the dict; ./calculator means look for a folder named calc that is located here in the same place as my script
     args["working_directory"] = "./calculator"
 
+    # Call functions
+    function_result = function_map[function_name](**args)
+
+    # Return the result not as string because Gemini wants it in as types.Content object with types.Part.from_function_response for function calls
+    return types.Content(
+        role="tool",
+        parts=[
+            types.Part.from_function_response(
+                name=function_name,
+                response={"result":function_result},
+            )
+        ]
+    )    
+
     
