@@ -50,6 +50,10 @@ def main():
         if response.usage_metadata is None:
             raise RuntimeError("Failed API Request, please try again later")
         else:
+            # Record what the model just said/requested
+            if response.candidates:
+                for candidate in response.candidates:
+                    messages.append(candidate.content)
             # Check for function calls
             function_calls = response.function_calls
             if args.verbose:
