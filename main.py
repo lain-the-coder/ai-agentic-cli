@@ -72,8 +72,18 @@ def main():
                     function_results.append(function_call_result.parts[0])
                     if args.verbose:
                         print(f"-> {function_call_result.parts[0].function_response.response}")
+                if function_results:
+                    messages.append(
+                        types.Content(
+                            role="user",
+                            parts=function_results
+                        )
+                    )
             else:
                 print(response.text)
                 return # if there are no function calls, the agent is DONE
+    # if we get here, it means we finished the 20 iterations without returns a response.text which means no final result
+    print("Error: Maximum iterations reached.")
+    exit(1)
 if __name__ == "__main__":
     main()
