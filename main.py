@@ -17,7 +17,6 @@ def main():
     parser.add_argument("prompt", type=str, help="Provide your prompt here")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
-    function_results = []
     # Constructing the message - a list that holds the entire history of the chat
     # types.Content is a single entry in the chat, if multiple, then multiple types.Content in the messages list separated by comma
     # role is the identity and first arg for types.Content
@@ -34,36 +33,43 @@ def main():
           ]
        )
     ]
-    response = client.models.generate_content(
-       model="gemini-2.5-flash",
-       contents=messages,
-       config=types.GenerateContentConfig(
-       tools=[available_functions],
-        system_instruction=system_prompt
-       ),
-    )
-    if response.usage_metadata is None:
-        raise RuntimeError("Failed API Request, please try again later")
-    else:
-        # Check for function calls
-        function_calls = response.function_calls
-        if args.verbose:
-            print(f"User prompt: {args.prompt}")
-            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
-        print("Response:")
-        if function_calls:
-            for function_call in function_calls:
-                function_call_result = call_function(function_call, args)
-                if not function_call_result.parts:
-                    raise RuntimeError("Empty .parts list")
-                if not function_call_result.parts[0].function_response:
-                    raise RuntimeError("Returned None value")
-                if not function_call_result.parts[0].function_response.response:
-                    raise RuntimeError("Returned None value")
-                function_results.append(function_call_result.parts[0])
-                if args.verbose:
-                    print(f"-> {function_call_result.parts[0].function_response.response}")
+    # Agent Loop (max 20 attempts)
+    for _ in range(20):
+        # Reset the results list for this specific turn
+        function_results=[]
+        # Call the model
+        response = client.models.generate_content(
+           model="gemini-2.5-flash",
+           contents=messages,
+           config=types.GenerateContentConfig(
+           tools=[available_functions],
+            system_instruction=system_prompt
+           ),
+        )
+        # Process the response
+        if response.usage_metadata is None:
+            raise RuntimeError("Failed API Request, please try again later")
         else:
-            print(response.text)
+            # Check for function calls
+            function_calls = response.function_calls
+            if args.verbose:
+                print(f"User prompt: {args.prompt}")
+                print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}\nResponse tokens: {response.usage_metadata.candidates_token_count}")
+            print("Response:")
+            if function_calls:
+                for function_call in function_calls:
+                    function_call_result = call_function(function_call, args)
+                    if not function_call_result.parts:
+                        raise RuntimeError("Empty .parts list")
+                    if not function_call_result.parts[0].function_response:
+                        raise RuntimeError("Returned None value")
+                    if not function_call_result.parts[0].function_response.response:
+                        raise RuntimeError("Returned None value")
+                    function_results.append(function_call_result.parts[0])
+                    if args.verbose:
+                        print(f"-> {function_call_result.parts[0].function_response.response}")
+            else:
+                print(response.text)
+                return # if there are no function calls, the agent is DONE
 if __name__ == "__main__":
     main()
